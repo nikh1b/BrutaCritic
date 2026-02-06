@@ -1,103 +1,87 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "../ui/Button";
-import { Camera, ShieldCheck, ShieldAlert, X, AlertTriangle } from "lucide-react";
+import { ShieldCheck, ShieldAlert, X, Brain, CheckCircle2 } from "lucide-react";
 
 interface BiometricScannerProps {
     onVerify: (success: boolean) => void;
     onClose: () => void;
 }
 
+// Human verification questions
+const questions = [
+    {
+        question: "What color is the sky on a clear day?",
+        answers: ["blue", "Blue", "BLUE"],
+        options: ["Green", "Blue", "Purple", "Orange"]
+    },
+    {
+        question: "How many legs does a dog have?",
+        answers: ["4", "four", "Four"],
+        options: ["2", "4", "6", "8"]
+    },
+    {
+        question: "Which one is a fruit?",
+        answers: ["apple", "Apple", "APPLE"],
+        options: ["Carrot", "Potato", "Apple", "Broccoli"]
+    },
+    {
+        question: "What do you use to write on paper?",
+        answers: ["pen", "Pen", "pencil", "Pencil"],
+        options: ["Hammer", "Pen", "Spoon", "Key"]
+    },
+    {
+        question: "What year comes after 2024?",
+        answers: ["2025"],
+        options: ["2023", "2024", "2025", "2026"]
+    }
+];
+
 export function BiometricScanner({ onVerify, onClose }: BiometricScannerProps) {
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const [stream, setStream] = useState<MediaStream | null>(null);
-    const [step, setStep] = useState<'request' | 'scanning' | 'analyzing' | 'result' | 'error'>('request');
-    const [result, setResult] = useState<boolean | null>(null);
-    const [errorMessage, setErrorMessage] = useState<string>("");
+    const [step, setStep] = useState<'intro' | 'questions' | 'result'>('intro');
+    const [currentQuestion, setCurrentQuestion] = useState(0);
+    const [correctAnswers, setCorrectAnswers] = useState(0);
+    const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+    const [showFeedback, setShowFeedback] = useState(false);
 
-    // Cleanup camera on unmount
-    useEffect(() => {
-        return () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-        };
-    }, [stream]);
+    // Get 3 random questions
+    const [selectedQuestions] = useState(() => {
+        const shuffled = [...questions].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, 3);
+    });
 
-    const startCamera = async () => {
-        // Check if we're in a secure context (HTTPS or localhost)
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            console.warn("Camera API not available, using simulation mode");
-            startSimulation();
-            return;
+    const handleStart = () => {
+        setStep('questions');
+    };
+
+    const handleAnswer = (answer: string) => {
+        setSelectedAnswer(answer);
+        setShowFeedback(true);
+
+        const isCorrect = selectedQuestions[currentQuestion].answers.includes(answer);
+        if (isCorrect) {
+            setCorrectAnswers(prev => prev + 1);
         }
 
-        try {
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: "user",
-                    width: { ideal: 640 },
-                    height: { ideal: 480 }
-                }
-            });
+        // Move to next question or result after delay
+        setTimeout(() => {
+            setShowFeedback(false);
+            setSelectedAnswer(null);
 
-            setStream(mediaStream);
-            setStep('scanning');
-
-            // Wait for video element to be ready
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream;
-                await videoRef.current.play();
-            }
-
-            // Auto progress through scanning phases
-            setTimeout(() => setStep('analyzing'), 3000);
-            setTimeout(() => {
-                const isSuccess = Math.random() > 0.1; // 90% success rate
-                setResult(isSuccess);
+            if (currentQuestion < selectedQuestions.length - 1) {
+                setCurrentQuestion(prev => prev + 1);
+            } else {
+                // All questions answered
                 setStep('result');
-
-                // Stop camera after getting result
-                mediaStream.getTracks().forEach(track => track.stop());
-
-                if (isSuccess) {
+                const passed = correctAnswers + (isCorrect ? 1 : 0) >= 2; // Need at least 2/3 correct
+                if (passed) {
                     setTimeout(() => onVerify(true), 1500);
                 }
-            }, 5000);
-
-        } catch (err) {
-            console.error("Camera access error:", err);
-
-            if (err instanceof Error) {
-                if (err.name === "NotAllowedError") {
-                    setErrorMessage("Camera permission denied. Using simulation mode.");
-                } else if (err.name === "NotFoundError") {
-                    setErrorMessage("No camera found. Using simulation mode.");
-                } else {
-                    setErrorMessage(`Camera error: ${err.message}. Using simulation mode.`);
-                }
             }
-
-            // Fallback to simulation after brief error display
-            setTimeout(() => startSimulation(), 1500);
-        }
+        }, 800);
     };
 
-    // Simulation mode for when camera is unavailable
-    const startSimulation = () => {
-        setStep('scanning');
-        setErrorMessage("");
-
-        setTimeout(() => setStep('analyzing'), 2000);
-        setTimeout(() => {
-            const isSuccess = Math.random() > 0.1;
-            setResult(isSuccess);
-            setStep('result');
-            if (isSuccess) {
-                setTimeout(() => onVerify(true), 1500);
-            }
-        }, 4000);
-    };
+    const passed = correctAnswers >= 2;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm">
@@ -110,8 +94,8 @@ export function BiometricScanner({ onVerify, onClose }: BiometricScannerProps) {
                 {/* Header */}
                 <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
                     <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-bruta-red animate-pulse" />
-                        <span className="font-mono text-sm text-bruta-red">HUMANODE // BIO-AUTH</span>
+                        <div className="w-2 h-2 rounded-full bg-critic-green animate-pulse" />
+                        <span className="font-mono text-sm text-critic-green">HUMAN VERIFICATION</span>
                     </div>
                     <Button variant="ghost" onClick={onClose} className="p-1 h-auto text-zinc-500 hover:text-white">
                         <X className="w-5 h-5" />
@@ -119,112 +103,126 @@ export function BiometricScanner({ onVerify, onClose }: BiometricScannerProps) {
                 </div>
 
                 {/* Main Content */}
-                <div className="relative aspect-[4/5] bg-black flex flex-col items-center justify-center">
+                <div className="p-8">
 
-                    {step === 'request' && (
-                        <div className="text-center space-y-4 p-8">
+                    {step === 'intro' && (
+                        <div className="text-center space-y-6">
                             <motion.div
-                                animate={{ scale: [1, 1.05, 1] }}
-                                transition={{ duration: 2, repeat: Infinity }}
-                                className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto"
+                                animate={{ rotate: [0, 10, -10, 0] }}
+                                transition={{ duration: 3, repeat: Infinity }}
+                                className="w-20 h-20 bg-zinc-800 rounded-full flex items-center justify-center mx-auto"
                             >
-                                <Camera className="w-8 h-8 text-text-muted" />
+                                <Brain className="w-10 h-10 text-critic-green" />
                             </motion.div>
-                            <h3 className="text-xl font-bold text-white">Face Scan Required</h3>
-                            <p className="text-text-muted text-sm">
-                                To ensure one-person-one-vote, we need to verify your uniqueness using cryptobiometrics.
-                            </p>
-                            {errorMessage && (
-                                <div className="flex items-center gap-2 text-yellow-500 text-xs bg-yellow-500/10 p-2 rounded">
-                                    <AlertTriangle className="w-4 h-4" />
-                                    {errorMessage}
-                                </div>
-                            )}
+                            <div>
+                                <h3 className="text-2xl font-black text-white">Prove You're Human</h3>
+                                <p className="text-text-muted text-sm mt-2">
+                                    Answer 3 simple questions to verify you're not a bot.
+                                </p>
+                            </div>
                             <Button
                                 variant="primary"
-                                onClick={startCamera}
-                                className="w-full bg-critic-green text-black hover:bg-critic-green/80 font-bold"
+                                onClick={handleStart}
+                                className="w-full bg-critic-green text-black hover:bg-critic-green/80 font-bold py-3"
                             >
-                                Start Camera
+                                Start Verification
                             </Button>
-                            <button
-                                onClick={startSimulation}
-                                className="text-xs text-zinc-500 hover:text-zinc-400 underline"
-                            >
-                                Skip (Use Simulation)
-                            </button>
                         </div>
                     )}
 
-                    {(step === 'scanning' || step === 'analyzing') && (
-                        <div className="relative w-full h-full">
-                            {stream ? (
-                                <video
-                                    ref={videoRef}
-                                    autoPlay
-                                    playsInline
-                                    muted
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                /* Simulation Mode - Animated Placeholder */
-                                <div className="w-full h-full bg-gradient-to-br from-zinc-900 to-zinc-800 flex items-center justify-center">
-                                    <motion.div
-                                        animate={{ opacity: [0.3, 1, 0.3] }}
-                                        transition={{ duration: 2, repeat: Infinity }}
-                                        className="w-32 h-32 rounded-full border-4 border-critic-green/30 flex items-center justify-center"
-                                    >
-                                        <div className="w-24 h-24 rounded-full bg-zinc-700/50" />
-                                    </motion.div>
-                                </div>
-                            )}
-
-                            {/* Scanning Overlay */}
-                            <div className="absolute inset-0 border-[20px] border-black/50" />
-                            <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 opacity-30">
-                                <div className="border-r border-b border-critic-green/50" />
-                                <div className="border-b border-critic-green/50" />
-                                <div className="border-r border-critic-green/50" />
-                                <div />
+                    {step === 'questions' && (
+                        <div className="space-y-6">
+                            {/* Progress */}
+                            <div className="flex items-center gap-2 justify-center">
+                                {selectedQuestions.map((_, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`w-3 h-3 rounded-full transition-colors ${idx < currentQuestion ? 'bg-critic-green' :
+                                                idx === currentQuestion ? 'bg-white' : 'bg-zinc-700'
+                                            }`}
+                                    />
+                                ))}
                             </div>
 
-                            {/* Scan Line */}
+                            {/* Question */}
                             <motion.div
-                                className="absolute left-0 w-full h-1 bg-critic-green shadow-[0_0_15px_#BEF264]"
-                                animate={{ top: ["0%", "100%", "0%"] }}
-                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                            />
+                                key={currentQuestion}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="text-center"
+                            >
+                                <p className="text-xs text-text-muted mb-2">Question {currentQuestion + 1} of 3</p>
+                                <h3 className="text-xl font-bold text-white">
+                                    {selectedQuestions[currentQuestion].question}
+                                </h3>
+                            </motion.div>
 
-                            {/* Status Text */}
-                            <div className="absolute bottom-8 left-0 w-full text-center">
-                                <span className="inline-block px-3 py-1 bg-black/80 text-critic-green font-mono text-xs border border-critic-green/30">
-                                    {step === 'scanning' ? "ACQUIRING BIOMETRICS..." : "GENERATING ZK-PROOF..."}
-                                </span>
+                            {/* Options */}
+                            <div className="grid grid-cols-2 gap-3">
+                                {selectedQuestions[currentQuestion].options.map((option) => {
+                                    const isCorrect = selectedQuestions[currentQuestion].answers.includes(option);
+                                    const isSelected = selectedAnswer === option;
+
+                                    return (
+                                        <motion.button
+                                            key={option}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={() => !showFeedback && handleAnswer(option)}
+                                            disabled={showFeedback}
+                                            className={`p-4 rounded-xl border-2 text-left font-medium transition-all ${showFeedback && isSelected
+                                                    ? isCorrect
+                                                        ? 'bg-critic-green/20 border-critic-green text-critic-green'
+                                                        : 'bg-bruta-red/20 border-bruta-red text-bruta-red'
+                                                    : showFeedback && isCorrect
+                                                        ? 'bg-critic-green/10 border-critic-green/50 text-critic-green'
+                                                        : 'bg-zinc-800 border-zinc-700 text-white hover:border-zinc-500'
+                                                }`}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span>{option}</span>
+                                                {showFeedback && isSelected && isCorrect && (
+                                                    <CheckCircle2 className="w-5 h-5" />
+                                                )}
+                                            </div>
+                                        </motion.button>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
 
                     {step === 'result' && (
-                        <div className="text-center space-y-4 p-8">
+                        <div className="text-center space-y-6">
                             <motion.div
                                 initial={{ scale: 0, rotate: -180 }}
                                 animate={{ scale: 1, rotate: 0 }}
                                 transition={{ type: "spring", damping: 15 }}
-                                className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto ${result ? 'bg-critic-green/10 text-critic-green' : 'bg-bruta-red/10 text-bruta-red'}`}
+                                className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto ${passed ? 'bg-critic-green/10 text-critic-green' : 'bg-bruta-red/10 text-bruta-red'
+                                    }`}
                             >
-                                {result ? <ShieldCheck className="w-10 h-10" /> : <ShieldAlert className="w-10 h-10" />}
+                                {passed ? <ShieldCheck className="w-12 h-12" /> : <ShieldAlert className="w-12 h-12" />}
                             </motion.div>
-                            <h3 className="text-2xl font-bold text-white">
-                                {result ? "UNIQUE HUMAN VERIFIED" : "VERIFICATION FAILED"}
-                            </h3>
-                            <p className="text-text-muted text-sm font-mono">
-                                {result ? "HASH: 0x7f...3a9c" : "ERROR: LIVENESS_CHECK_FAILED"}
-                            </p>
-                            {!result && (
+                            <div>
+                                <h3 className="text-2xl font-black text-white">
+                                    {passed ? "HUMAN VERIFIED" : "VERIFICATION FAILED"}
+                                </h3>
+                                <p className="text-text-muted text-sm mt-2 font-mono">
+                                    {passed
+                                        ? `Score: ${correctAnswers}/3 • HASH: 0x7f...3a9c`
+                                        : `Score: ${correctAnswers}/3 • Too many wrong answers`
+                                    }
+                                </p>
+                            </div>
+                            {!passed && (
                                 <Button
                                     variant="secondary"
-                                    onClick={() => setStep('request')}
-                                    className="mt-4"
+                                    onClick={() => {
+                                        setStep('intro');
+                                        setCurrentQuestion(0);
+                                        setCorrectAnswers(0);
+                                    }}
+                                    className="w-full"
                                 >
                                     Try Again
                                 </Button>
