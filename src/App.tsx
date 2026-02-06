@@ -12,14 +12,17 @@ import { Leaderboard } from "./components/leaderboard/Leaderboard";
 import { GameSearch } from "./components/search/GameSearch";
 import { AdminDashboard } from "./components/admin/AdminDashboard";
 import { AudioVisualizer } from "./components/video/AudioVisualizer";
-import { Trophy, Search, Shield, Music } from "lucide-react";
+import { ReviewsPage } from "./components/reviews/ReviewsPage";
+import { WriteReviewModal } from "./components/reviews/WriteReviewModal";
+import { Trophy, Search, Shield, Music, Star } from "lucide-react";
 
-type Section = "home" | "profile" | "leaderboard" | "search" | "admin" | "audio";
+type Section = "home" | "profile" | "leaderboard" | "search" | "admin" | "audio" | "reviews";
 
 function App() {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isWriteReviewOpen, setIsWriteReviewOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<Section>("home");
 
   return (
@@ -33,6 +36,7 @@ function App() {
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
       <JoinResistanceModal isOpen={isJoinOpen} onClose={() => setIsJoinOpen(false)} />
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      <WriteReviewModal isOpen={isWriteReviewOpen} onClose={() => setIsWriteReviewOpen(false)} />
 
       <main className="pt-24 px-4 max-w-7xl mx-auto mb-20">
         {/* Quick Nav */}
@@ -83,6 +87,12 @@ function App() {
           </section>
         )}
 
+        {activeSection === "reviews" && (
+          <section className="py-12">
+            <ReviewsPage onWriteReview={() => setIsWriteReviewOpen(true)} />
+          </section>
+        )}
+
         {activeSection === "home" && (
           <>
             <section className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-8">
@@ -97,10 +107,10 @@ function App() {
               <div className="flex gap-4 flex-wrap justify-center">
                 <Button
                   variant="primary"
-                  onClick={() => setActiveSection("search")}
+                  onClick={() => setActiveSection("reviews")}
                   className="bg-critic-green text-black hover:bg-critic-green/80 hover:border-transparent hover:shadow-[0_0_20px_rgba(190,242,100,0.5)]"
                 >
-                  Find Games
+                  Read Reviews
                 </Button>
                 <Button
                   variant="secondary"
@@ -114,12 +124,13 @@ function App() {
 
             {/* Quick Links */}
             <section className="py-12">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 {[
+                  { label: "Reviews", icon: Star, section: "reviews" as Section, color: "text-bruta-red" },
                   { label: "Leaderboard", icon: Trophy, section: "leaderboard" as Section, color: "text-yellow-500" },
                   { label: "Find Games", icon: Search, section: "search" as Section, color: "text-critic-green" },
                   { label: "Audio Viz", icon: Music, section: "audio" as Section, color: "text-blue-400" },
-                  { label: "Admin", icon: Shield, section: "admin" as Section, color: "text-bruta-red" },
+                  { label: "Admin", icon: Shield, section: "admin" as Section, color: "text-purple-400" },
                 ].map((item) => (
                   <Button
                     key={item.label}
@@ -138,7 +149,7 @@ function App() {
             <section className="py-20">
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-3xl font-bold font-display">Trending & Verified</h2>
-                <Button variant="ghost" className="text-critic-green" onClick={() => setActiveSection("search")}>
+                <Button variant="ghost" className="text-critic-green" onClick={() => setActiveSection("reviews")}>
                   View All
                 </Button>
               </div>
