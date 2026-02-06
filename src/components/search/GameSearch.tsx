@@ -1,139 +1,214 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Gamepad2, Star, Clock, ChevronRight } from "lucide-react";
+import { Search, Star, Clock, Gamepad2, ExternalLink } from "lucide-react";
 import { Button } from "../ui/Button";
+import { searchGames, getPopularGames, type RawgGame } from "../../lib/rawg";
 
-// Mock game database
-const mockGames = [
-    { id: "elden_ring", title: "Elden Ring", reviews: 1247, avgScore: 9.2, image: "🗡️" },
-    { id: "baldurs_gate_3", title: "Baldur's Gate 3", reviews: 892, avgScore: 9.5, image: "🧙" },
-    { id: "starfield", title: "Starfield", reviews: 634, avgScore: 6.8, image: "🚀" },
-    { id: "cyberpunk_2077", title: "Cyberpunk 2077", reviews: 1823, avgScore: 7.9, image: "🤖" },
-    { id: "hollow_knight", title: "Hollow Knight", reviews: 567, avgScore: 9.1, image: "🦋" },
-    { id: "gta_v", title: "GTA V", reviews: 2341, avgScore: 9.0, image: "🚗" },
-    { id: "minecraft", title: "Minecraft", reviews: 3102, avgScore: 9.3, image: "⛏️" },
-    { id: "valorant", title: "Valorant", reviews: 1456, avgScore: 8.2, image: "🎯" },
-    { id: "fortnite", title: "Fortnite", reviews: 2890, avgScore: 7.5, image: "🏰" },
-    { id: "skyrim", title: "The Elder Scrolls V: Skyrim", reviews: 1987, avgScore: 9.4, image: "🐉" },
+const genres = [
+    { id: "all", name: "All Genres" },
+    { id: "action", name: "Action" },
+    { id: "adventure", name: "Adventure" },
+    { id: "role-playing-games-rpg", name: "RPG" },
+    { id: "shooter", name: "Shooter" },
+    { id: "indie", name: "Indie" },
+    { id: "puzzle", name: "Puzzle" },
+    { id: "sports", name: "Sports" },
 ];
 
-interface GameSearchProps {
-    onSelectGame?: (gameId: string) => void;
-}
-
-export function GameSearch({ onSelectGame }: GameSearchProps) {
+export function GameSearch() {
     const [query, setQuery] = useState("");
-    const [selectedGame, setSelectedGame] = useState<string | null>(null);
+    const [games, setGames] = useState<RawgGame[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedGenre, setSelectedGenre] = useState("all");
+    const [totalCount, setTotalCount] = useState(0);
 
-    const filteredGames = mockGames.filter(game =>
-        game.title.toLowerCase().includes(query.toLowerCase())
-    );
+    // Load popular games on mount
+    useEffect(() => {
+        async function loadPopular() {
+            setIsLoading(true);
+            const result = await getPopularGames(1, 12);
+            setGames(result.results);
+            setTotalCount(result.count);
+            setIsLoading(false);
+        }
+        loadPopular();
+    }, []);
 
-    const handleSelectGame = (gameId: string) => {
-        setSelectedGame(gameId);
-        onSelectGame?.(gameId);
-    };
+    // Search games when query changes
+    useEffect(() => {
+        const timeoutId = setTimeout(async () => {
+            if (query.trim()) {
+                setIsLoading(true);
+                const result = await searchGames(query, 1, 12);
+                setGames(result.results);
+                setTotalCount(result.count);
+                setIsLoading(false);
+            } else {
+                // Reset to popular games
+                setIsLoading(true);
+                const result = await getPopularGames(1, 12);
+                setGames(result.results);
+                setTotalCount(result.count);
+                setIsLoading(false);
+            }
+        }, 300); // Debounce
 
-    const getScoreColor = (score: number) => {
-        if (score >= 8) return "text-critic-green";
-        if (score >= 6) return "text-yellow-500";
-        return "text-bruta-red";
+        return () => clearTimeout(timeoutId);
+    }, [query]);
+
+    // Filter by genre (client-side for now)
+    const filteredGames = selectedGenre === "all"
+        ? games
+        : games.filter(g => g.genres?.some(genre => genre.slug === selectedGenre));
+
+    const getScoreColor = (rating: number) => {
+        if (rating >= 4) return "bg-critic-green text-black";
+        if (rating >= 3) return "bg-yellow-500 text-black";
+        return "bg-bruta-red text-white";
     };
 
     return (
-        <div className="space-y-6">
-            {/* Search Header */}
-            <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-critic-green/20 rounded-xl flex items-center justify-center">
-                    <Gamepad2 className="w-6 h-6 text-critic-green" />
-                </div>
-                <div>
-                    <h2 className="text-2xl font-black text-white">Find Games</h2>
-                    <p className="text-sm text-text-muted">Search for games and read verified reviews</p>
-                </div>
+        <div className="space-y-8">
+            {/* Header */}
+            <div className="text-center">
+                <h2 className="text-3xl md:text-4xl font-black text-white mb-2">
+                    Find <span className="text-critic-green">Games</span>
+                </h2>
+                <p className="text-text-muted">
+                    Browse {totalCount.toLocaleString()}+ games • Powered by RAWG
+                </p>
             </div>
 
-            {/* Search Input */}
-            <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
-                <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search for a game..."
-                    className="w-full pl-12 pr-4 py-4 bg-background border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:border-critic-green/50"
-                />
+            {/* Search & Filters */}
+            <div className="space-y-4">
+                <div className="relative max-w-xl mx-auto">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                    <input
+                        type="text"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Search games..."
+                        className="w-full pl-12 pr-4 py-4 bg-surface border border-zinc-800 rounded-2xl text-white text-lg placeholder:text-zinc-600 focus:outline-none focus:border-critic-green/50 transition-colors"
+                    />
+                </div>
+
+                {/* Genre Filters */}
+                <div className="flex flex-wrap justify-center gap-2">
+                    {genres.map(genre => (
+                        <Button
+                            key={genre.id}
+                            variant={selectedGenre === genre.id ? "primary" : "ghost"}
+                            onClick={() => setSelectedGenre(genre.id)}
+                            className={`text-sm ${selectedGenre === genre.id ? "bg-critic-green text-black" : ""}`}
+                        >
+                            {genre.name}
+                        </Button>
+                    ))}
+                </div>
             </div>
 
             {/* Results */}
-            <div className="grid gap-3">
-                {filteredGames.map((game, index) => (
-                    <motion.div
-                        key={game.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.03 }}
-                        whileHover={{ scale: 1.01, x: 4 }}
-                        onClick={() => handleSelectGame(game.id)}
-                        className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${selectedGame === game.id
-                                ? "bg-critic-green/10 border-critic-green/50"
-                                : "bg-surface border-zinc-800 hover:border-zinc-700"
-                            }`}
-                    >
-                        {/* Game Icon */}
-                        <div className="w-14 h-14 bg-zinc-800 rounded-xl flex items-center justify-center text-2xl">
-                            {game.image}
-                        </div>
+            {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[...Array(6)].map((_, i) => (
+                        <div key={i} className="h-64 bg-zinc-800/50 rounded-2xl animate-pulse" />
+                    ))}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredGames.map((game, index) => (
+                        <motion.div
+                            key={game.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            whileHover={{ y: -5, scale: 1.02 }}
+                            className="group relative overflow-hidden rounded-2xl bg-surface border border-zinc-800 hover:border-critic-green/50 transition-all cursor-pointer"
+                        >
+                            {/* Game Image */}
+                            <div className="aspect-video relative overflow-hidden">
+                                {game.background_image ? (
+                                    <img
+                                        src={game.background_image}
+                                        alt={game.name}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+                                        <Gamepad2 className="w-12 h-12 text-zinc-600" />
+                                    </div>
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
 
-                        {/* Info */}
-                        <div className="flex-1">
-                            <div className="font-bold text-white">{game.title}</div>
-                            <div className="text-sm text-text-muted flex items-center gap-4">
-                                <span className="flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    {game.reviews} reviews
-                                </span>
-                            </div>
-                        </div>
+                                {/* Metacritic Score */}
+                                {game.metacritic && (
+                                    <div className="absolute top-3 right-3 px-2 py-1 bg-black/80 rounded-lg text-xs font-bold text-white">
+                                        MC: {game.metacritic}
+                                    </div>
+                                )}
 
-                        {/* Score */}
-                        <div className="flex items-center gap-3">
-                            <div className="text-right">
-                                <div className={`text-2xl font-black ${getScoreColor(game.avgScore)}`}>
-                                    {game.avgScore}
+                                {/* Rating Badge */}
+                                <div className={`absolute bottom-3 right-3 px-3 py-1 rounded-full text-sm font-black ${getScoreColor(game.rating)}`}>
+                                    ★ {game.rating.toFixed(1)}
                                 </div>
-                                <div className="text-xs text-text-muted flex items-center gap-1">
-                                    <Star className="w-3 h-3" />
-                                    avg score
+                            </div>
+
+                            {/* Game Info */}
+                            <div className="p-4">
+                                <h3 className="font-black text-white text-lg line-clamp-1 group-hover:text-critic-green transition-colors">
+                                    {game.name}
+                                </h3>
+
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                    {game.genres?.slice(0, 2).map(genre => (
+                                        <span key={genre.id} className="px-2 py-0.5 bg-zinc-800 rounded-full text-xs text-zinc-400">
+                                            {genre.name}
+                                        </span>
+                                    ))}
+                                </div>
+
+                                <div className="flex items-center justify-between mt-4 text-xs text-zinc-500">
+                                    <div className="flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        <span>{game.playtime}h avg</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <Star className="w-3 h-3" />
+                                        <span>{game.ratings_count?.toLocaleString() || 0} ratings</span>
+                                    </div>
+                                </div>
+
+                                {/* Platforms */}
+                                <div className="flex items-center gap-2 mt-3 text-xs text-zinc-500">
+                                    {game.platforms?.slice(0, 3).map(p => (
+                                        <span key={p.platform.id} className="px-2 py-0.5 bg-zinc-900 rounded text-zinc-400">
+                                            {p.platform.name.replace('PC', '💻').replace('PlayStation', '🎮').replace('Xbox', '🟢').replace('Nintendo', '🔴')}
+                                        </span>
+                                    ))}
                                 </div>
                             </div>
-                            <ChevronRight className="w-5 h-5 text-zinc-500" />
-                        </div>
-                    </motion.div>
-                ))}
 
-                {filteredGames.length === 0 && (
-                    <div className="text-center py-12 text-text-muted">
-                        No games found matching "{query}"
-                    </div>
-                )}
-            </div>
-
-            {/* Selected Game Action */}
-            {selectedGame && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex gap-3"
-                >
-                    <Button variant="primary" className="flex-1 bg-critic-green text-black hover:bg-critic-green/80">
-                        View All Reviews
-                    </Button>
-                    <Button variant="secondary" className="flex-1">
-                        Write a Review
-                    </Button>
-                </motion.div>
+                            {/* Hover Overlay */}
+                            <div className="absolute inset-0 bg-critic-green/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                        </motion.div>
+                    ))}
+                </div>
             )}
+
+            {filteredGames.length === 0 && !isLoading && (
+                <div className="text-center py-12">
+                    <Gamepad2 className="w-16 h-16 mx-auto text-zinc-700 mb-4" />
+                    <p className="text-text-muted">No games found for "{query}"</p>
+                </div>
+            )}
+
+            {/* Attribution */}
+            <div className="text-center text-xs text-zinc-600">
+                Game data provided by{" "}
+                <a href="https://rawg.io" target="_blank" rel="noopener noreferrer" className="text-critic-green hover:underline">
+                    RAWG.io <ExternalLink className="w-3 h-3 inline" />
+                </a>
+            </div>
         </div>
     );
 }
