@@ -13,6 +13,18 @@ The easiest way to deploy this Vite/React app.
     - Build Command: `npm run build`
     - Output Directory: `dist`
 5.  Click **Deploy**.
+    
+    ## How to Update
+    Because you are connected to GitHub, deployments are **automatic**.
+    
+    1.  Make changes on your computer.
+    2.  Open Terminal and run:
+        ```bash
+        git add .
+        git commit -m "Description of changes"
+        git push
+        ```
+    3.  Vercel detects the push and re-deploys automatically (usually takes <1 minute).
 
 ## Option 2: Netlify
 1.  Drag and drop the `dist` folder (created after running `npm run build`) into the Netlify Drop zone.

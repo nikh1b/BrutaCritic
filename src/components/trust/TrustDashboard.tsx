@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Button } from "../ui/Button";
 import { QuadraticVoting } from "../../lib/engine/QuadraticVoting";
 import { PlatformVerifier, type Platform, type GameInfo } from "../../lib/engine/PlatformVerifier";
-import { SybilGuard } from "../../lib/engine/SybilGuard";
 import { BiometricScanner } from "./BiometricScanner";
 import { motion } from "framer-motion";
 
@@ -72,13 +71,7 @@ export function TrustDashboard() {
     };
 
     // Sybil Logic
-    const scanFace = async () => {
-        setIsScanning(true);
-        const proof = await SybilGuard.generateMockProof();
-        const result = SybilGuard.verifyHumanity(proof);
-        setIsHuman(result);
-        setIsScanning(false);
-    };
+
 
     const earnCredits = () => {
         setBudget(prev => prev + 10);
