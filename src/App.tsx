@@ -96,7 +96,6 @@ function App() {
                   onClick={() => setActiveSection("search")}
                   className="bg-critic-green text-black hover:bg-critic-green/80 hover:border-transparent hover:shadow-[0_0_20px_rgba(190,242,100,0.5)]"
                 >
-                  <Search className="w-4 h-4 mr-2" />
                   Find Games
                 </Button>
                 <Button
