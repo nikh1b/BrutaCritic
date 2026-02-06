@@ -1,39 +1,64 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "../ui/Button";
-import { ShieldCheck, ShieldAlert, X, Brain, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, ShieldAlert, X, Gamepad2, CheckCircle2 } from "lucide-react";
 
 interface BiometricScannerProps {
     onVerify: (success: boolean) => void;
     onClose: () => void;
 }
 
-// Human verification questions
+// Gamer verification questions - only a true gamer knows these!
 const questions = [
     {
-        question: "What color is the sky on a clear day?",
-        answers: ["blue", "Blue", "BLUE"],
-        options: ["Green", "Blue", "Purple", "Orange"]
+        question: "You have 29 bullets left in a 30-round magazine. The area is clear. What do you do?",
+        correctAnswer: "Reload immediately",
+        options: ["Wait for an enemy", "Throw the gun away", "Reload immediately", "Save the bullet"]
     },
     {
-        question: "How many legs does a dog have?",
-        answers: ["4", "four", "Four"],
-        options: ["2", "4", "6", "8"]
+        question: "A tragic event happens in a cutscene. The internet tells you to Press 'F' to...",
+        correctAnswer: "Pay Respects",
+        options: ["Fly", "Pay Respects", "Fail", "Fire"]
     },
     {
-        question: "Which one is a fruit?",
-        answers: ["apple", "Apple", "APPLE"],
-        options: ["Carrot", "Potato", "Apple", "Broccoli"]
+        question: "You are mining in a cave and hear a \"Tsssss\" sound behind you. What is it?",
+        correctAnswer: "A Creeper",
+        options: ["A snake", "A gas leak", "A Creeper", "A zombie"]
     },
     {
-        question: "What do you use to write on paper?",
-        answers: ["pen", "Pen", "pencil", "Pencil"],
-        options: ["Hammer", "Pen", "Spoon", "Key"]
+        question: "The traffic light turns red in GTA V. What is the standard procedure?",
+        correctAnswer: "Drive through it at 100 mph",
+        options: ["Stop and wait patiently", "Check for pedestrians", "Turn on the turn signal", "Drive through it at 100 mph"]
     },
     {
-        question: "What year comes after 2024?",
-        answers: ["2025"],
-        options: ["2023", "2024", "2025", "2026"]
+        question: "Your teammate is standing still and staring at a wall for 2 minutes. They are:",
+        correctAnswer: "AFK",
+        options: ["NPC", "AFK", "OP", "MVP"]
+    },
+    {
+        question: "You missed an easy shot and died. What is the most socially acceptable excuse?",
+        correctAnswer: "Lag / High Ping",
+        options: ["I suck", "Lag / High Ping", "My monitor was off", "The enemy is too good"]
+    },
+    {
+        question: "A player sits in a dark corner with a shotgun waiting for someone to walk by. They are a:",
+        correctAnswer: "Camper",
+        options: ["Strategist", "Hero", "Camper", "Speedrunner"]
+    },
+    {
+        question: "The screen fades in from black. You are on a wagon. The first words you hear are:",
+        correctAnswer: "Hey you, you're finally awake.",
+        options: ["War never changes.", "Hey you, you're finally awake.", "All you had to do was follow the train.", "It's dangerous to go alone."]
+    },
+    {
+        question: "You have 50 powerful healing potions. You are at the final boss. Do you use them?",
+        correctAnswer: "No, I might need them later",
+        options: ["Yes, immediately", "No, I might need them later", "Sell them", "Drop them"]
+    },
+    {
+        question: "If Mario is Player 1 (Red), who is Player 2 (Green)?",
+        correctAnswer: "Luigi",
+        options: ["Zelda", "Wario", "Luigi", "Yoshi"]
     }
 ];
 
@@ -58,7 +83,7 @@ export function BiometricScanner({ onVerify, onClose }: BiometricScannerProps) {
         setSelectedAnswer(answer);
         setShowFeedback(true);
 
-        const isCorrect = selectedQuestions[currentQuestion].answers.includes(answer);
+        const isCorrect = answer === selectedQuestions[currentQuestion].correctAnswer;
         if (isCorrect) {
             setCorrectAnswers(prev => prev + 1);
         }
@@ -78,7 +103,7 @@ export function BiometricScanner({ onVerify, onClose }: BiometricScannerProps) {
                     setTimeout(() => onVerify(true), 1500);
                 }
             }
-        }, 800);
+        }, 1000);
     };
 
     const passed = correctAnswers >= 2;
@@ -89,13 +114,13 @@ export function BiometricScanner({ onVerify, onClose }: BiometricScannerProps) {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl"
+                className="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl"
             >
                 {/* Header */}
                 <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-critic-green animate-pulse" />
-                        <span className="font-mono text-sm text-critic-green">HUMAN VERIFICATION</span>
+                        <span className="font-mono text-sm text-critic-green">GAMER VERIFICATION</span>
                     </div>
                     <Button variant="ghost" onClick={onClose} className="p-1 h-auto text-zinc-500 hover:text-white">
                         <X className="w-5 h-5" />
@@ -112,12 +137,12 @@ export function BiometricScanner({ onVerify, onClose }: BiometricScannerProps) {
                                 transition={{ duration: 3, repeat: Infinity }}
                                 className="w-20 h-20 bg-zinc-800 rounded-full flex items-center justify-center mx-auto"
                             >
-                                <Brain className="w-10 h-10 text-critic-green" />
+                                <Gamepad2 className="w-10 h-10 text-critic-green" />
                             </motion.div>
                             <div>
-                                <h3 className="text-2xl font-black text-white">Prove You're Human</h3>
+                                <h3 className="text-2xl font-black text-white">Prove You're a Gamer</h3>
                                 <p className="text-text-muted text-sm mt-2">
-                                    Answer 3 simple questions to verify you're not a bot.
+                                    Answer 3 questions only a true gamer would know.
                                 </p>
                             </div>
                             <Button
@@ -138,7 +163,7 @@ export function BiometricScanner({ onVerify, onClose }: BiometricScannerProps) {
                                     <div
                                         key={idx}
                                         className={`w-3 h-3 rounded-full transition-colors ${idx < currentQuestion ? 'bg-critic-green' :
-                                                idx === currentQuestion ? 'bg-white' : 'bg-zinc-700'
+                                            idx === currentQuestion ? 'bg-white' : 'bg-zinc-700'
                                             }`}
                                     />
                                 ))}
@@ -152,15 +177,15 @@ export function BiometricScanner({ onVerify, onClose }: BiometricScannerProps) {
                                 className="text-center"
                             >
                                 <p className="text-xs text-text-muted mb-2">Question {currentQuestion + 1} of 3</p>
-                                <h3 className="text-xl font-bold text-white">
+                                <h3 className="text-lg font-bold text-white leading-relaxed">
                                     {selectedQuestions[currentQuestion].question}
                                 </h3>
                             </motion.div>
 
                             {/* Options */}
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 gap-3">
                                 {selectedQuestions[currentQuestion].options.map((option) => {
-                                    const isCorrect = selectedQuestions[currentQuestion].answers.includes(option);
+                                    const isCorrect = option === selectedQuestions[currentQuestion].correctAnswer;
                                     const isSelected = selectedAnswer === option;
 
                                     return (
@@ -171,12 +196,12 @@ export function BiometricScanner({ onVerify, onClose }: BiometricScannerProps) {
                                             onClick={() => !showFeedback && handleAnswer(option)}
                                             disabled={showFeedback}
                                             className={`p-4 rounded-xl border-2 text-left font-medium transition-all ${showFeedback && isSelected
-                                                    ? isCorrect
-                                                        ? 'bg-critic-green/20 border-critic-green text-critic-green'
-                                                        : 'bg-bruta-red/20 border-bruta-red text-bruta-red'
-                                                    : showFeedback && isCorrect
-                                                        ? 'bg-critic-green/10 border-critic-green/50 text-critic-green'
-                                                        : 'bg-zinc-800 border-zinc-700 text-white hover:border-zinc-500'
+                                                ? isCorrect
+                                                    ? 'bg-critic-green/20 border-critic-green text-critic-green'
+                                                    : 'bg-bruta-red/20 border-bruta-red text-bruta-red'
+                                                : showFeedback && isCorrect
+                                                    ? 'bg-critic-green/10 border-critic-green/50 text-critic-green'
+                                                    : 'bg-zinc-800 border-zinc-700 text-white hover:border-zinc-500'
                                                 }`}
                                         >
                                             <div className="flex items-center justify-between">
@@ -205,12 +230,12 @@ export function BiometricScanner({ onVerify, onClose }: BiometricScannerProps) {
                             </motion.div>
                             <div>
                                 <h3 className="text-2xl font-black text-white">
-                                    {passed ? "HUMAN VERIFIED" : "VERIFICATION FAILED"}
+                                    {passed ? "TRUE GAMER VERIFIED" : "NOT A REAL GAMER"}
                                 </h3>
                                 <p className="text-text-muted text-sm mt-2 font-mono">
                                     {passed
-                                        ? `Score: ${correctAnswers}/3 • HASH: 0x7f...3a9c`
-                                        : `Score: ${correctAnswers}/3 • Too many wrong answers`
+                                        ? `Score: ${correctAnswers}/3 • Welcome to the resistance!`
+                                        : `Score: ${correctAnswers}/3 • Go touch some grass... then come back.`
                                     }
                                 </p>
                             </div>
