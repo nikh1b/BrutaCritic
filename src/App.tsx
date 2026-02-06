@@ -6,6 +6,7 @@ import { TrustDashboard } from "./components/trust/TrustDashboard";
 import { ReviewSequence } from "./components/video/ReviewSequence";
 import { AboutModal } from "./components/layout/AboutModal";
 import { JoinResistanceModal } from "./components/layout/JoinResistanceModal";
+import { AuthModal } from "./components/auth/AuthModal";
 import { UserProfile } from "./components/profile/UserProfile";
 import { Leaderboard } from "./components/leaderboard/Leaderboard";
 import { GameSearch } from "./components/search/GameSearch";
@@ -18,6 +19,7 @@ type Section = "home" | "profile" | "leaderboard" | "search" | "admin" | "audio"
 function App() {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<Section>("home");
 
   return (
@@ -25,10 +27,12 @@ function App() {
       <Navbar
         onAboutClick={() => setIsAboutOpen(true)}
         onProfileClick={() => setActiveSection(activeSection === "profile" ? "home" : "profile")}
+        onSignInClick={() => setIsAuthOpen(true)}
       />
 
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
       <JoinResistanceModal isOpen={isJoinOpen} onClose={() => setIsJoinOpen(false)} />
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
 
       <main className="pt-24 px-4 max-w-7xl mx-auto mb-20">
         {/* Quick Nav */}
