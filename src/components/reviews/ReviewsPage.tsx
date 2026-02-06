@@ -276,12 +276,18 @@ export function ReviewsPage({ onWriteReview }: ReviewsPageProps) {
                             transition={{ delay: index * 0.05 }}
                         >
                             <ReviewCard
+                                id={review.id}
                                 gameTitle={getGameTitle(review.game_id)}
                                 reviewerName={review.user?.username || "Anonymous"}
                                 score={review.score || 0}
                                 playtime={(review.playtime_at_review || 0) / 60}
                                 summary={review.content || ""}
+                                upvotes={Math.floor(Math.random() * 50) + 10}
+                                downvotes={Math.floor(Math.random() * 10)}
                                 variant={index === 0 ? "large" : "default"}
+                                onVote={(reviewId, voteType, cost) => {
+                                    console.log(`Vote: ${voteType} on ${reviewId}, cost: ${cost} credits`);
+                                }}
                             />
                         </motion.div>
                     ))}
